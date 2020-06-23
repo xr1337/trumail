@@ -1,48 +1,42 @@
 package verifier
 
-import check "gopkg.in/check.v1"
+import (
+	"testing"
 
-type addressSuite struct{}
+	"github.com/stretchr/testify/assert"
+)
 
-var _ = check.Suite(&addressSuite{})
+func TestEmailWithPlus(t *testing.T) {
+	type test struct {
+		email    string
+		username string
+		domain   string
+		address  string
+		hash     string
+	}
 
-func (s *addressSuite) TestParseAddress(c *check.C) {
-	email := "email_username@domain.com"
-	address, err := ParseAddress(email)
+	testCases := []test{
+		{"email_username+a@domain.com", "email_username+a", "domain.com", "email_username+a@domain.com", "842da636835e1db9be6f0609610fc439"},
+		{"email_username@domain.com", "email_username", "domain.com", "email_username@domain.com", "629b2a45027be2158761fecb17eb79d6"},
+		{"email.username@domain.com", "email.username", "domain.com", "email.username@domain.com", "80f59a9e93602984c43085a1e9412d9a"},
+		{"email_username@DoMAIn.CoM", "email_username", "domain.com", "email_username@domain.com", "629b2a45027be2158761fecb17eb79d6"},
+		{"EMAIL_USERNAME@DOMAIN.COM", "EMAIL_USERNAME", "domain.com", "EMAIL_USERNAME@domain.com", "94d8a553082c902d086c47bd40ccf3c1"},
+	}
+	for _, c := range testCases {
+		address, err := ParseAddress(c.email)
 
-	c.Assert(err, check.IsNil)
-	c.Assert(address.Username, check.Equals, "email_username")
-	c.Assert(address.Domain, check.Equals, "domain.com")
-	c.Assert(address.Address, check.Equals, "email_username@domain.com")
-	c.Assert(address.MD5Hash, check.Equals, "629b2a45027be2158761fecb17eb79d6")
+		assert.Nil(t, err)
+		assert.Equal(t, address.Username, c.username)
+		assert.Equal(t, address.Domain, c.domain)
+		assert.Equal(t, address.Address, c.address)
+		assert.Equal(t, address.MD5Hash, c.hash)
+	}
 }
 
-func (s *addressSuite) TestParseAddress2(c *check.C) {
-	email := "email_username@DoMAIn.CoM"
-	address, err := ParseAddress(email)
-
-	c.Assert(err, check.IsNil)
-	c.Assert(address.Username, check.Equals, "email_username")
-	c.Assert(address.Domain, check.Equals, "domain.com")
-	c.Assert(address.Address, check.Equals, "email_username@domain.com")
-	c.Assert(address.MD5Hash, check.Equals, "629b2a45027be2158761fecb17eb79d6")
-}
-
-func (s *addressSuite) TestParseAddressForUpperCaseEmails(c *check.C) {
-	email := "EMAIL_USERNAME@DOMAIN.COM"
-	address, err := ParseAddress(email)
-
-	c.Assert(err, check.IsNil)
-	c.Assert(address.Username, check.Equals, "EMAIL_USERNAME")
-	c.Assert(address.Domain, check.Equals, "domain.com")
-	c.Assert(address.Address, check.Equals, "EMAIL_USERNAME@domain.com")
-	c.Assert(address.MD5Hash, check.Equals, "94d8a553082c902d086c47bd40ccf3c1")
-}
-
-func (s *addressSuite) TestParseAddressInvalidEmail(c *check.C) {
+func TestParseAddressInvalidEmail(t *testing.T) {
 	email := "email_username@"
 	address, err := ParseAddress(email)
 
-	c.Assert(err, check.Not(check.IsNil))
-	c.Assert(address, check.IsNil)
+	assert.Error(t, err)
+	assert.Nil(t, address)
 }

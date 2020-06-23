@@ -20,8 +20,10 @@ type Address struct{ Address, Username, Domain, MD5Hash string }
 // ParseAddress attempts to parse an email address and return it in the form
 // of an Address struct pointer - domain case insensitive
 func ParseAddress(email string) (*Address, error) {
+	// Filter out +xyz from the email
+
 	// Parses the address with the internal go mail address parser
-	a, err := mail.ParseAddress(unescape(email))
+	a, err := mail.ParseAddress(email)
 	if err != nil {
 		return nil, err
 	}
